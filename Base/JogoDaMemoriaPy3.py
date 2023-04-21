@@ -1,9 +1,9 @@
 
-#? Port feito por Rodrigo Mota, github: 
+# ? Port feito por Rodrigo Mota, github:
 #! ALTERAÇÃO DO PORT:
-    #* print modificado pra print()
-    #* raw_input() modificado pra input()
-    #* Removendo sys.write e substituindo com print()
+# * print modificado pra print()
+# * raw_input() modificado pra input()
+# * Removendo sys.write e substituindo com print()
 
 import os
 import sys
@@ -15,8 +15,10 @@ import random
 ##
 
 # Limpa a tela.
+
+
 def limpaTela():
-    
+
     os.system('cls' if os.name == 'nt' else 'clear')
 
 ##
@@ -24,6 +26,8 @@ def limpaTela():
 ##
 
 # Imprime estado atual do tabuleiro
+
+
 def imprimeTabuleiro(tabuleiro):
 
     # Limpa a tela
@@ -70,9 +74,11 @@ def imprimeTabuleiro(tabuleiro):
 
         print("")
 
-# Cria um novo tabuleiro com pecas aleatorias. 
+# Cria um novo tabuleiro com pecas aleatorias.
 # 'dim' eh a dimensao do tabuleiro, necessariamente
 # par.
+
+
 def novoTabuleiro(dim):
 
     # Cria um tabuleiro vazio.
@@ -95,10 +101,10 @@ def novoTabuleiro(dim):
 
             posicoesDisponiveis.append((i, j))
 
-    # Varre todas as pecas que serao colocadas no 
+    # Varre todas as pecas que serao colocadas no
     # tabuleiro e posiciona cada par de pecas iguais
     # em posicoes aleatorias.
-        #* ALTERAÇÃO DO PORT: LIMITE SUPERIOR DO RANGE FORÇADAMENTE CONVERTIDO PRA INTEIRO
+        # * ALTERAÇÃO DO PORT: LIMITE SUPERIOR DO RANGE FORÇADAMENTE CONVERTIDO PRA INTEIRO
     for j in range(0, int(dim / 2)):
         for i in range(1, dim + 1):
 
@@ -121,6 +127,8 @@ def novoTabuleiro(dim):
 # Abre (revela) peca na posicao (i, j). Se posicao ja esta
 # aberta ou se ja foi removida, retorna False. Retorna True
 # caso contrario.
+
+
 def abrePeca(tabuleiro, i, j):
 
     if tabuleiro[i][j] == '-':
@@ -134,6 +142,8 @@ def abrePeca(tabuleiro, i, j):
 # Fecha peca na posicao (i, j). Se posicao ja esta
 # fechada ou se ja foi removida, retorna False. Retorna True
 # caso contrario.
+
+
 def fechaPeca(tabuleiro, i, j):
 
     if tabuleiro[i][j] == '-':
@@ -147,6 +157,8 @@ def fechaPeca(tabuleiro, i, j):
 # Remove peca na posicao (i, j). Se posicao ja esta
 # removida, retorna False. Retorna True
 # caso contrario.
+
+
 def removePeca(tabuleiro, i, j):
 
     if tabuleiro[i][j] == '-':
@@ -155,21 +167,27 @@ def removePeca(tabuleiro, i, j):
         tabuleiro[i][j] = "-"
         return True
 
-## 
+##
 # Funcoes de manipulacao do placar
 ##
 
 # Cria um novo placar zerado.
+
+
 def novoPlacar(nJogadores):
 
     return [0] * nJogadores
 
 # Adiciona um ponto no placar para o jogador especificado.
+
+
 def incrementaPlacar(placar, jogador):
 
     placar[jogador] = placar[jogador] + 1
 
 # Imprime o placar atual.
+
+
 def imprimePlacar(placar):
 
     nJogadores = len(placar)
@@ -184,22 +202,26 @@ def imprimePlacar(placar):
 #
 
 # Imprime informacoes basicas sobre o estado atual da partida.
+
+
 def imprimeStatus(tabuleiro, placar, vez):
 
-        imprimeTabuleiro(tabuleiro)
-        print('')
+    imprimeTabuleiro(tabuleiro)
+    print('')
 
-        imprimePlacar(placar)
-        print('')
-        print('')
+    imprimePlacar(placar)
+    print('')
+    print('')
 
-        print("Vez do Jogador {0}.\n".format(vez + 1), end='')
+    print("Vez do Jogador {0}.\n".format(vez + 1), end='')
 
 # Le um coordenadas de uma peca. Retorna uma tupla do tipo (i, j)
 # em caso de sucesso, ou False em caso de erro.
+
+
 def leCoordenada(dim):
 
-    #* Variável input modificado pra playerInput, raw_input modificado pra input
+    # * Variável input modificado pra playerInput, raw_input modificado pra input
     playerInput = input("Especifique uma peca: ")
 
     try:
@@ -207,19 +229,22 @@ def leCoordenada(dim):
         j = int(playerInput.split(' ')[1])
     except ValueError:
         print("Coordenadas invalidas! Use o formato \"i j\" (sem aspas),")
-        print("onde i e j sao inteiros maiores ou iguais a 0 e menores que {0}".format(dim))
+        print(
+            "onde i e j sao inteiros maiores ou iguais a 0 e menores que {0}".format(dim))
         input("Pressione <enter> para continuar...")
         return False
 
     if i < 0 or i >= dim:
 
-        print("Coordenada i deve ser maior ou igual a zero e menor que {0}".format(dim))
+        print(
+            "Coordenada i deve ser maior ou igual a zero e menor que {0}".format(dim))
         input("Pressione <enter> para continuar...")
         return False
 
     if j < 0 or j >= dim:
 
-        print("Coordenada j deve ser maior ou igual a zero e menor que {0}".format(dim))
+        print(
+            "Coordenada j deve ser maior ou igual a zero e menor que {0}".format(dim))
         input("Pressione <enter> para continuar...")
         return False
 
@@ -229,11 +254,12 @@ def leCoordenada(dim):
 # Parametros da partida
 ##
 
+
 # Tamanho (da lateral) do tabuleiro. NECESSARIAMENTE PAR E MENOR QUE 10!
 dim = 4
 
 # Numero de jogadores
-nJogadores = 3
+nJogadores = 2
 
 # Numero total de pares de pecas
 totalDePares = dim**2 / 2
@@ -248,7 +274,7 @@ tabuleiro = novoTabuleiro(dim)
 # Cria um novo placar zerado
 placar = novoPlacar(nJogadores)
 
-# Partida continua enquanto ainda ha pares de pecas a 
+# Partida continua enquanto ainda ha pares de pecas a
 # casar.
 paresEncontrados = 0
 vez = 0
@@ -274,7 +300,7 @@ while paresEncontrados < totalDePares:
             input("Pressione <enter> para continuar...")
             continue
 
-        break 
+        break
 
     # Requisita segunda peca do proximo jogador
     while True:
@@ -296,18 +322,19 @@ while paresEncontrados < totalDePares:
             input("Pressione <enter> para continuar...")
             continue
 
-        break 
+        break
 
     # Imprime status do jogo
     imprimeStatus(tabuleiro, placar, vez)
 
-    print("Pecas escolhidas --> ({0}, {1}) e ({2}, {3})\n".format(i1, j1, i2, j2))
+    print(
+        "Pecas escolhidas --> ({0}, {1}) e ({2}, {3})\n".format(i1, j1, i2, j2))
 
     # Pecas escolhidas sao iguais?
     if tabuleiro[i1][j1] == tabuleiro[i2][j2]:
 
         print("Pecas casam! Ponto para o jogador {0}.".format(vez + 1))
-        
+
         incrementaPlacar(placar, vez)
         paresEncontrados = paresEncontrados + 1
         removePeca(tabuleiro, i1, j1)
@@ -317,7 +344,7 @@ while paresEncontrados < totalDePares:
     else:
 
         print("Pecas nao casam!")
-        
+
         time.sleep(3)
 
         fechaPeca(tabuleiro, i1, j1)
@@ -343,5 +370,3 @@ if len(vencedores) > 1:
 else:
 
     print("Jogador {0} foi o vencedor!".format(vencedores[0] + 1))
-
-
