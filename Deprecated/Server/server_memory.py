@@ -1,5 +1,6 @@
 import socket
 import time
+import pickle
 
 # * Server socket TCP
 
@@ -9,11 +10,11 @@ PORT = 50000
 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.bind((HOST, PORT))
-server_socket.listen(2)
+server_socket.listen()
 
 client_list = []
 
-# * Funções do Jogo
+# region # * Funções do Jogo
 
 
 def novoTabuleiro(dim):
@@ -64,8 +65,10 @@ def novoTabuleiro(dim):
 def novoPlacar(nJogadores):
     return [0] * nJogadores
 
+# endregion
 
-# * Dados do Jogos
+# region #* Dados do Jogos
+
 
 dim = 4
 nJogadores = 2
@@ -77,15 +80,10 @@ turno = 0
 tabuleiro = novoTabuleiro(dim)
 placar = novoPlacar(nJogadores)
 
-# * Message Settings
+# endregion
 
+# region #* Messages Protocol
 HEADER_LENGTH = 10
-REQUEST_USERNAME = "#REQUEST_USERNAME_INPUT"
-REQUEST_GAME_INPUT = "#REQUEST_GAME_INPUT"
-SEND_STATUS = "#STATUS"
-SEND_TABULEIRO = "#TABULEIRO"
-SEND_PLACAR = "#PLACAR"
-SEND_VEZ = "#VEZ"
 
 
 def receiveMessage(socket):
@@ -110,10 +108,10 @@ def createMessage(message: str):
     return header + data
 
 
-def sendToAllClients(message):
+def sendToAllClients(clientList: list, message: str):
     byteMessage = createMessage(message)
     print(f"Enviando para todos: {message}")
-    for client in client_list:
+    for client in list:
         client.send(byteMessage)
 
 
@@ -132,45 +130,106 @@ def sendToExcept(ignoredClient: socket, message: str):
             client.send(byteMessage)
 
 
-print(f"Servidor Iniciado, esperando {nJogadores} jogadores")
+# endregion
 
-# * Aceitando N clientes
+# region #* Game Communication
+
+REQUEST_USERNAME = "#REQUEST_USERNAME_INPUT"
+REQUEST_GAME_INPUT = "#REQUEST_GAME_INPUT"
+SEND_STATUS = "#STATUS"
+SEND_TABULEIRO = "#TABULEIRO"
+SEND_PLACAR = "#PLACAR"
+SEND_VEZ = "#VEZ"
+
+
+def createStatusInfo(tabuleiro, placar, turno):
+    status = {'tabuleiro': tabuleiro, 'placar': placar, 'turno': turno}
+    data = createMessage(pickle.dumps(status))
+    return data
+
+# endregion
+
+# region #* Server Functions
+
+
+def setupGame(tableDimension, playerNumber):
+    print(f"Iniciando jogo!")
+
+    nJogadores = playerNumber
+    dim = tableDimension
+
+    totalDePares = dim**2 / 2
+    paresEncontrados = 0
+
+    turno = 0
+
+    tabuleiro = novoTabuleiro(dim)
+    placar = novoPlacar(nJogadores)
+
+
+def waitForPlayers():
+    print(f"\n Esperando {nJogadores} jogadores")
+
+    while True:
+        client_socket, address = server_socket.accept()
+
+        # ? Desnecessário porque limita conexão
+        if len(client_list) >= nJogadores:
+            client_socket.send(createMessage("Servidor cheio!"))
+            client_socket.close()
+            continue
+
+        client_list.append(client_socket)
+        print(f"Conexão com {address} estabelecida!")
+        client_socket.send(createMessage(
+            f"Conectado ao servidor!"))
+
+        sendToAllClients(f"Jogadores: {len(client_list)}/{nJogadores}")
+        print(f"Jogadores: {len(client_list)}/{nJogadores}")
+
+        if len(client_list) >= nJogadores:
+            sendToAllClients("Começando partida!")
+            print("Começando partida!")
+            break
+
+
+def gameLoop():
+    while True:
+        sendToAllClients(client_list, f"Vez do jogador {turno+1}.\n")
+        sendToExcept(turno, f"Esperando jogador...")
+
+        print(f"Solicitando input do jogador {turno+1}")
+
+        sendToClient(turno, f"\nEscolha uma peça:\n>")
+        sendToClient(turno, REQUEST_GAME_INPUT)
+
+        playerInput = receiveMessage(client_list[turno])
+        if playerInput:
+            msg = playerInput['data']
+            print(f"Mensagem recebida do jogador {turno+1}: {msg}")
+
+        time.sleep(0.5)
+
+        turno = (turno + 1) % nJogadores
+
+
+def endGame():
+    pass
+
+
+def terminateServer():
+    server_socket.shutdown()
+    server_socket.close()
+# endregion
+
+
 while True:
-    client_socket, address = server_socket.accept()
+    setupGame()
 
-    # ? Desnecessário porque limita conexão
-    if len(client_list) >= nJogadores:
-        client_socket.send(createMessage("Servidor cheio!"))
-        client_socket.close()
-        continue
+    waitForPlayers()
 
-    client_list.append(client_socket)
-    print(f"Conexão com {address} estabelecida!")
-    client_socket.send(createMessage(
-        f"Conectado ao servidor!"))
+    gameLoop()
 
-    sendToAllClients(f"Jogadores: {len(client_list)}/{nJogadores}")
-    print(f"Jogadores: {len(client_list)}/{nJogadores}")
+    endGame()
 
-    if len(client_list) >= nJogadores:
-        sendToAllClients("Começando partida!")
-        print("Começando partida!")
-        break
-
-while True:
-    sendToAllClients(f"Vez do jogador {turno+1}.\n")
-    sendToExcept(turno, f"Esperando jogador...")
-
-    print(f"Solicitando input do jogador {turno+1}")
-
-    sendToClient(turno, f"\nEscolha uma peça:\n>")
-    sendToClient(turno, REQUEST_GAME_INPUT)
-
-    playerInput = receiveMessage(client_list[turno])
-    if playerInput:
-        msg = playerInput['data']
-        print(f"Mensagem recebida do jogador {turno+1}: {msg}")
-
-    time.sleep(0.5)
-
-    turno = (turno + 1) % nJogadores
+terminateServer()
