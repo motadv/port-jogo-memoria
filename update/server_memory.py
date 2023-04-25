@@ -19,20 +19,24 @@ client_list = []
 
 def terminateServer():
     print("Closing server...")
+
     server_socket.close()
 
 
 # * Message Settings
 
 HEADER_LENGTH = 10
+
 REQUEST_USERNAME = "#REQUEST_USERNAME_INPUT"
 REQUEST_GAME_INPUT = "#REQUEST_GAME_INPUT"
+
 SEND_STATUS = "#STATUS"
 SEND_TABULEIRO = "#TABULEIRO"
 SEND_PLACAR = "#PLACAR"
 SEND_VEZ = "#VEZ"
 SEND_WAIT = "#WAIT"
-SEND_INPUT_ERROR = "#INPUT_ERROR"
+SEND_RESULT_DRAW = "#DRAW"
+SEND_RESULT_WINNER = "#WINNER"
 
 ERROR_INVALID_FORMAT = "#INVALID_FORMAT"
 ERROR_IOOB = "#iOOB"
@@ -42,11 +46,8 @@ ERROR_OPEN_CARD = "#CARD_ALREADY_OPEN"
 ERROR_TYPE_LIST = [ERROR_INVALID_FORMAT,
                    ERROR_IOOB, ERROR_JOOB, ERROR_OPEN_CARD]
 
-SEND_INPUT_SUCCESS = "#SUCCESS"
-SEND_INPUT_FAIL = "#FAIL"
-
-SEND_RESULT_DRAW = "#DRAW"
-SEND_RESULT_WINNER = "#WINNER"
+SIGNAL_INPUT_SUCCESS = "#SUCCESS"
+SIGNAL_INPUT_FAIL = "#FAIL"
 
 
 def acceptClients(nJogadores):
@@ -335,12 +336,14 @@ def gameLoop(nJogadores, dim):
 
             temp_sendStatus(client_list, tabuleiro, placar, turno)
 
+            # ! Combinar um padrão de passagem da jogada feita
+            # * Sugestão: [(i1,j1),(i2,j2)] ou [i1,j1,i2,j2]
             sendToAllClients(
                 client_list, f"Jogador {turno+1} escolheu as peças: {(i1, j1)} {(i2, j2)}")
 
             if tabuleiro[i1][j1] == tabuleiro[i2][j2]:
                 # TODO: Handle player acertar tentativa
-                sendToAllClients(client_list, SEND_INPUT_SUCCESS)
+                sendToAllClients(client_list, SIGNAL_INPUT_SUCCESS)
 
                 incrementaPlacar(placar, turno)
                 paresEncontrados += 1
@@ -351,7 +354,7 @@ def gameLoop(nJogadores, dim):
                 time.sleep(5)
             else:
                 # TODO: Handle player errar tentativa
-                sendToAllClients(client_list, SEND_INPUT_FAIL)
+                sendToAllClients(client_list, SIGNAL_INPUT_FAIL)
 
                 time.sleep(3)
 
