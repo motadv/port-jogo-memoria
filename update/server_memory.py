@@ -82,7 +82,7 @@ def acceptClients(nJogadores):
         except socket.timeout:
             pass
         except Exception as exc:
-            print(str(exc))
+            raise exc
 
     else:
         sendToAllClients(client_list, "Começando partida!")
@@ -411,14 +411,29 @@ def gameLoop(nJogadores, dim):
 print(f"Servidor Iniciado!")
 
 
-nJogadores = 1
-dim = 4
-# nJogadores = int(input("Insira o número máximo de jogadores\n >"))
-# dim = int(input("Insira a dimensão do tabuleiro de jogo\n >"))
+try:
+    nJogadores = int(input("Quantos jogadores na mesa?\n>"))
+except:
+    print("Definindo valor padrão = 1")
+    nJogadores = 1
+
+try:
+    dim = int(input("Qual a dimensão do tabuleiro? (Par < 10)\n>"))
+    if dim >= 10 or dim % 2 == 1:
+        print("Tabuleiro deve ser menor que 10x10 e de tamanho par")
+        print("Definindo valor padrão = 4")
+        dim = 4
+except:
+    print("Tabuleiro deve ser menor que 10x10 e de tamanho par")
+    print("Definindo valor padrão = 4")
+    dim = 4
+
+    # nJogadores = int(input("Insira o número máximo de jogadores\n >"))
+    # dim = int(input("Insira a dimensão do tabuleiro de jogo\n >"))
 
 try:
     while True:
-        print(f"Começando novo jogo!\n")
+        print(f"\nComeçando novo jogo!\n")
         print(f"Máximo de jogadores: {nJogadores}")
         print(f"Dimensão do tabuleiro: {dim}")
 
@@ -432,4 +447,6 @@ try:
 
 except Exception as exc:
     print(str(exc))
+    raise exc
+finally:
     terminateServer()
