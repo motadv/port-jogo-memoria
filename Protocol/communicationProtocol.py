@@ -21,8 +21,7 @@ SEND_STATUS = "#STATUS"
 # SEND_PLACAR = "#PLACAR"
 # SEND_VEZ = "#VEZ"
 SEND_WAIT = "#WAIT"
-SEND_RESULT_DRAW = "#DRAW"
-SEND_RESULT_WINNER = "#WINNER"
+SEND_RESULT = "#RESULT"
 SEND_INPUT_ERROR = "#INPUT_ERROR"
 
 # REQUEST_ comunica solicitação de input
@@ -60,11 +59,13 @@ SEND_INPUT_FAIL = SIGNAL_INPUT_FAIL
 # mensagens eram agrupadas automaticamente pela API ou pelo transporte
 
 
-def createMessage(message: str, flag: str = ''):
+def createMessage(message, flag: str = ''):
     # Se nenhuma flag for passada, a default é SEND_MESSAGE
     flag = flag if flag else SEND_MESSAGE
-    flagHeader = flag + SEPARATOR
-    data = flagHeader.encode() + message.encode()
+    if type(message) is str:
+        message = message.encode()
+    flagHeader = (flag + SEPARATOR).encode()
+    data = flagHeader + message
     header = f'{len(data):<{HEADER_LENGTH}}'.encode()
     return header + data
 

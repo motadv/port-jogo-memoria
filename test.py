@@ -24,9 +24,14 @@
 # # MSG ||| Teste
 # # MSG\./Teste
 
-a = ""
-b = "MENSAGEM"
+import pickle
+a = {
+    "data": "dataLegal",
+    "flag": "flagChata"
+}
 
-a = a if a else b
+b = "Teste"
 
-print(a)
+
+dado = pickle.dumps(a)
+print(dado.encode())

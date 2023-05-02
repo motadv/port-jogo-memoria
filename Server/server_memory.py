@@ -62,20 +62,20 @@ def acceptClients(nJogadores):
         time.sleep(2)
 
 
-def sendToAllClients(clients, message: str = "", flag=SEND_MESSAGE):
+def sendToAllClients(clients, message="", flag=SEND_MESSAGE):
     byteMessage = createMessage(message, flag)
     print(f"Enviando para todos: {message}")
     for client in clients:
         client.send(byteMessage)
 
 
-def sendToClient(client, message: str = "", flag=SEND_MESSAGE):
+def sendToClient(client, message="", flag=SEND_MESSAGE):
     byteMessage = createMessage(message, flag)
     print(f"Enviando para cliente: {message} : {byteMessage}")
     client.send(byteMessage)
 
 
-def sendToExcept(clients: list, ignoredClient, message: str = "", flag=SEND_MESSAGE):
+def sendToExcept(clients: list, ignoredClient, message="", flag=SEND_MESSAGE):
     # Send to all clients exepct specified in parameter
     print(f"Enviando para todos exceto um: {message}")
     byteMessage = createMessage(message, flag)
@@ -266,16 +266,11 @@ def gameLoop(nJogadores, dim):
             sendToAllClients(clients=client_list, message=createStatus(
                 tabuleiro, placar, vez), flag=SEND_STATUS)
 
-            # ! Combinar um padrão de passagem da jogada feita
-            # * Sugestão: [(i1,j1),(i2,j2)] ou [i1,j1,i2,j2]
-
-            # ? Padrão decidido arbitrariamente = [(i1,j1),(i2,j2)]
+            # * Padrão decidido = ((i1,j1),(i2,j2))
             jogada = pickle.dumps({
                 "jogador": vez+1,
-                "jogada": [(i1, j1), (i2, j2)]
+                "jogada": ((i1, j1), (i2, j2))
             })
-            # sendToAllClients(
-            #     client_list, f"Jogador {vez+1} escolheu as peças: {(i1, j1)} {(i2, j2)}")
 
             if tabuleiro[i1][j1] == tabuleiro[i2][j2]:
                 # * Handle player acertar tentativa
@@ -313,10 +308,7 @@ def gameLoop(nJogadores, dim):
             if placar[i] == maxScore:
                 vencedores.append(playerNumber)
 
-        if len(vencedores) > 1:
-            sendToAllClients(client_list, vencedores, SEND_RESULT_DRAW)
-        else:
-            sendToAllClients(client_list, vencedores[0], SEND_RESULT_WINNER)
+        sendToAllClients(client_list, pickle.dumps(vencedores), SEND_RESULT)
 
     except socket.timeout:
         pass
