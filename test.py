@@ -24,7 +24,9 @@
 # # MSG ||| Teste
 # # MSG\./Teste
 
-if not int(""):
-    print("False")
-else:
-    print("True")
+a = ""
+b = "MENSAGEM"
+
+a = a if a else b
+
+print(a)

@@ -2,6 +2,8 @@ import socket
 
 # Módulo de padronização de protocolos do jogo da memória
 
+# Importe fazendo from Protocol.communicationProtocol import *
+
 # * Constantes de comunicação
 # Dita o tamanho fixo em caracteres que o header terá
 HEADER_LENGTH = 10
