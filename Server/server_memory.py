@@ -255,13 +255,13 @@ def gameLoop(nJogadores, dim):
                          str(playerNumber), flag=SEND_WAIT)
 
             print(f"Requesting first input from {playerNumber}")
-            i1, j1 = chooseCard(playerSocket)
+            i1, j1 = chooseCard(playerSocket, tabuleiro)
 
             sendToAllClients(clients=client_list, message=createStatus(
                 tabuleiro, placar, vez), flag=SEND_STATUS)
 
             print(f"Requesting second input from {playerNumber}")
-            i2, j2 = chooseCard(playerSocket)
+            i2, j2 = chooseCard(playerSocket, tabuleiro)
 
             sendToAllClients(clients=client_list, message=createStatus(
                 tabuleiro, placar, vez), flag=SEND_STATUS)
