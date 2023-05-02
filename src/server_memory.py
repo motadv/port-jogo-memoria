@@ -1,7 +1,6 @@
 import socket
 import time
 import random
-import pickle
 from Protocol.communicationProtocol import *
 
 # * Server socket TCP
@@ -93,8 +92,7 @@ def createStatus(tabuleiro, placar, vez):
         'placar': placar,
         'vez': vez
     }
-    byt = pickle.dumps(status)
-    return byt
+    return status
 
 
 def chooseCard(client, tabuleiro):
@@ -267,10 +265,10 @@ def gameLoop(nJogadores, dim):
                 tabuleiro, placar, vez), flag=SEND_STATUS)
 
             # * Padrão decidido = ((i1,j1),(i2,j2))
-            jogada = pickle.dumps({
+            jogada = {
                 "jogador": vez+1,
                 "jogada": ((i1, j1), (i2, j2))
-            })
+            }
 
             if tabuleiro[i1][j1] == tabuleiro[i2][j2]:
                 # * Handle player acertar tentativa
@@ -308,7 +306,7 @@ def gameLoop(nJogadores, dim):
             if placar[i] == maxScore:
                 vencedores.append(playerNumber)
 
-        sendToAllClients(client_list, pickle.dumps(vencedores), SEND_RESULT)
+        sendToAllClients(client_list, vencedores, SEND_RESULT)
 
     except socket.timeout:
         pass

@@ -1,4 +1,5 @@
 import socket
+import pickle
 
 # Módulo de padronização de protocolos do jogo da memória
 
@@ -7,9 +8,6 @@ import socket
 # * Constantes de comunicação
 # Dita o tamanho fixo em caracteres que o header terá
 HEADER_LENGTH = 10
-
-# Separador entre flag de comunicação e dado da mensagem
-SEPARATOR = "\./"
 
 # Flags de comunicação, ditam qual tipo de mensagem está sendo recebida
 # SEND_ comunica que o envio de dados
@@ -62,11 +60,10 @@ SEND_INPUT_FAIL = SIGNAL_INPUT_FAIL
 def createMessage(message, flag: str = ''):
     # Se nenhuma flag for passada, a default é SEND_MESSAGE
     flag = flag if flag else SEND_MESSAGE
-    if type(message) is str:
-        message = message.encode()
-    flagHeader = (flag + SEPARATOR).encode()
-    data = flagHeader + message
+
+    data = pickle.dumps((flag, message))
     header = f'{len(data):<{HEADER_LENGTH}}'.encode()
+
     return header + data
 
 
@@ -86,13 +83,11 @@ def receiveMessage(senderSocket: socket.socket):
                 return False
 
             message_length = int(message_header.decode())
-            message = senderSocket.recv(message_length).decode()
-            flag, data = message.split(SEPARATOR)
-            return {
-                "header": message_header,
-                "flag": flag,
-                "data": data
-            }
+
+            message = senderSocket.recv(message_length)
+            flag, data = pickle.loads(message)
+
+            return (flag, data)
         except socket.timeout:
             pass
         except Exception as exc:

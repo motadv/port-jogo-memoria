@@ -25,13 +25,16 @@
 # # MSG\./Teste
 
 import pickle
-a = {
-    "data": "dataLegal",
-    "flag": "flagChata"
-}
+import socket
+from Protocol.communicationProtocol import *
 
-b = "Teste"
+HOST = "26.44.38.67"
+PORT = 50000
 
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket.bind((HOST, PORT))
+server_socket.listen()
 
-dado = pickle.dumps(a)
-print(dado.encode())
+client, _ = server_socket.accept()
+
+client.send(createMessage(["teste", 2, {"nome": "marcos"}]))
