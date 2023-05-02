@@ -96,36 +96,27 @@ def createStatus(tabuleiro, placar, vez):
 
 
 def chooseCard(client, tabuleiro):
-    # Send first input request
-    sendToClient(client, flag=REQUEST_GAME_INPUT)
-    # Get input from player
     try:
-        msg = receiveMessage(client)
-        if msg:
-            playerInput = validateInput(msg['data'], tabuleiro)
+        # Send first input request
+        sendToClient(client, flag=REQUEST_GAME_INPUT)
+        _, msg = receiveMessage(client)
+        playerInput = validateInput(msg)
+        if playerInput not in ERROR_TYPE_LIST:
+            playerInput = abrePeca(tabuleiro, playerInput)
 
+        while playerInput in ERROR_TYPE_LIST:
+            sendToClient(client, message=playerInput, flag=SEND_INPUT_ERROR)
+            _, msg = receiveMessage(client)
+            playerInput = validateInput(msg)
             if playerInput not in ERROR_TYPE_LIST:
-                abrePeca(tabuleiro, playerInput)
-
-            while playerInput in ERROR_TYPE_LIST:
-                # Send error type to player
-                sendToClient(client, message=playerInput,
-                             flag=SEND_INPUT_ERROR)
-
-                # Get new input from player
-                msg = receiveMessage(client)
-                if msg:
-                    playerInput = validateInput(msg['data'], tabuleiro)
-
-            else:
-                return playerInput
+                playerInput = abrePeca(tabuleiro, playerInput)
+        else:
+            return playerInput
 
     except socket.timeout:
         pass
     except Exception as exc:
         raise (exc)
-
-    print(f'Não houve mensagem, saindo do ChooseCard | msg = {msg}')
 
 
 def validateInput(playerInput: str):
