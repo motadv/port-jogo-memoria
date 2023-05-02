@@ -1,7 +1,7 @@
 import socket
 import time
 import random
-import pickle
+from Protocol.communicationProtocol import *
 
 # * Server socket TCP
 
@@ -23,31 +23,11 @@ def terminateServer():
     server_socket.close()
 
 
-# * Message Settings
+def endGame():
+    for client in client_list:
+        client.close()
 
-HEADER_LENGTH = 10
-
-REQUEST_USERNAME = "#REQUEST_USERNAME_INPUT"
-REQUEST_GAME_INPUT = "#REQUEST_GAME_INPUT"
-
-SEND_STATUS = "#STATUS"
-SEND_TABULEIRO = "#TABULEIRO"
-SEND_PLACAR = "#PLACAR"
-SEND_VEZ = "#VEZ"
-SEND_WAIT = "#WAIT"
-SEND_RESULT_DRAW = "#DRAW"
-SEND_RESULT_WINNER = "#WINNER"
-
-ERROR_INVALID_FORMAT = "#INVALID_FORMAT"
-ERROR_IOOB = "#iOOB"
-ERROR_JOOB = "#jOOB"
-ERROR_OPEN_CARD = "#CARD_ALREADY_OPEN"
-
-ERROR_TYPE_LIST = [ERROR_INVALID_FORMAT,
-                   ERROR_IOOB, ERROR_JOOB, ERROR_OPEN_CARD]
-
-SIGNAL_INPUT_SUCCESS = "#SUCCESS"
-SIGNAL_INPUT_FAIL = "#FAIL"
+    client_list = []
 
 
 def acceptClients(nJogadores):
@@ -73,7 +53,7 @@ def acceptClients(nJogadores):
         except socket.timeout:
             pass
         except Exception as exc:
-            print(str(exc))
+            raise exc
 
     else:
         sendToAllClients(client_list, "Começando partida!")
@@ -81,49 +61,24 @@ def acceptClients(nJogadores):
         time.sleep(2)
 
 
-def receiveMessage(senderSocket):
-    while True:
-        try:
-            message_header = senderSocket.recv(HEADER_LENGTH)
-
-            if not len(message_header):
-                return False
-
-            message_length = int(message_header.decode())
-            return {
-                "header": message_header,
-                "data": senderSocket.recv(message_length).decode()
-            }
-        except socket.timeout:
-            pass
-        except Exception as exc:
-            raise (exc)
-
-
-def createMessage(message: str):
-    data = message.encode()
-    header = f'{len(data):<{HEADER_LENGTH}}'.encode()
-    return header + data
-
-
-def sendToAllClients(client_list, message: str):
-    byteMessage = createMessage(message)
+def sendToAllClients(clients, message="", flag=SEND_MESSAGE):
+    byteMessage = createMessage(message, flag)
     print(f"Enviando para todos: {message}")
-    for client in client_list:
+    for client in clients:
         client.send(byteMessage)
 
 
-def sendToClient(client, message: str):
-    byteMessage = createMessage(message)
+def sendToClient(client, message="", flag=SEND_MESSAGE):
+    byteMessage = createMessage(message, flag)
     print(f"Enviando para cliente: {message} : {byteMessage}")
     client.send(byteMessage)
 
 
-def sendToExcept(client_list: list, ignoredClient, message: str):
+def sendToExcept(clients: list, ignoredClient, message="", flag=SEND_MESSAGE):
     # Send to all clients exepct specified in parameter
     print(f"Enviando para todos exceto um: {message}")
-    byteMessage = createMessage(message)
-    for client in client_list:
+    byteMessage = createMessage(message, flag)
+    for client in clients:
         if client != ignoredClient:
             client.send(byteMessage)
 
@@ -137,13 +92,12 @@ def createStatus(tabuleiro, placar, vez):
         'placar': placar,
         'vez': vez
     }
-    byt = pickle.dumps(status)
-    return byt
+    return status
 
 
 def chooseCard(client, tabuleiro):
     # Send first input request
-    sendToClient(client, REQUEST_GAME_INPUT)
+    sendToClient(client, flag=REQUEST_GAME_INPUT)
     # Get input from player
     try:
         msg = receiveMessage(client)
@@ -155,8 +109,8 @@ def chooseCard(client, tabuleiro):
 
             while playerInput in ERROR_TYPE_LIST:
                 # Send error type to player
-                sendToClient(client, SEND_INPUT_ERROR)
-                sendToClient(client, playerInput)
+                sendToClient(client, message=playerInput,
+                             flag=SEND_INPUT_ERROR)
 
                 # Get new input from player
                 msg = receiveMessage(client)
@@ -251,22 +205,6 @@ def novoPlacar(nJogadores):
     return [0] * nJogadores
 
 
-def novoJogo(dim, nJogadores):
-    jogo = {
-        'dim': dim,
-        'nJogadores': 2,
-        'totalDePares': dim**2 / 2,
-
-        'paresEncontrados': 0,
-        'turno': 0,
-
-        'tabuleiro': novoTabuleiro(dim),
-        'placar': novoPlacar(nJogadores),
-    }
-
-    return jogo
-
-
 def incrementaPlacar(placar, jogador):
 
     placar[jogador] = placar[jogador] + 1
@@ -292,20 +230,9 @@ def fechaPeca(tabuleiro, i, j):
     return False
 
 
-def temp_sendStatus(clientList, tabuleiro, placar, vez):
-    sendToAllClients(clientList, SEND_TABULEIRO)
-    sendToAllClients(clientList, tabuleiro)
-
-    sendToAllClients(clientList, SEND_PLACAR)
-    sendToAllClients(clientList, placar)
-
-    sendToAllClients(clientList, SEND_VEZ)
-    sendToAllClients(clientList, vez)
-
-
 def gameLoop(nJogadores, dim):
 
-    turno = 0
+    vez = 0
     tabuleiro = novoTabuleiro(dim)
     placar = novoPlacar(nJogadores)
     totalDePares = dim**2 / 2
@@ -314,38 +241,44 @@ def gameLoop(nJogadores, dim):
     try:
         while paresEncontrados < totalDePares:
 
-            playerSocket = client_list[turno]
-            playerNumber = turno+1
+            playerSocket = client_list[vez]
+            playerNumber = vez+1
 
             print(f"Sending Status to all players")
-            temp_sendStatus(client_list, tabuleiro, placar, turno)
-            # sendToAllClients(SEND_STATUS)
-            # sendToAllClients(createStatus(tabuleiro, placar, turno))
+            sendToAllClients(clients=client_list, message=createStatus(
+                tabuleiro, placar, vez), flag=SEND_STATUS)
 
             print(f"Sending wait message to all players")
-            sendToExcept(client_list, playerSocket, SEND_WAIT)
-            sendToExcept(client_list, playerSocket, str(playerNumber))
+            sendToExcept(client_list, playerSocket,
+                         str(playerNumber), flag=SEND_WAIT)
 
             print(f"Requesting first input from {playerNumber}")
-            i1, j1 = chooseCard(playerSocket)
+            i1, j1 = chooseCard(playerSocket, tabuleiro)
 
-            temp_sendStatus(client_list, tabuleiro, placar, turno)
+            sendToAllClients(clients=client_list, message=createStatus(
+                tabuleiro, placar, vez), flag=SEND_STATUS)
 
             print(f"Requesting second input from {playerNumber}")
-            i2, j2 = chooseCard(playerSocket)
+            i2, j2 = chooseCard(playerSocket, tabuleiro)
 
-            temp_sendStatus(client_list, tabuleiro, placar, turno)
+            sendToAllClients(clients=client_list, message=createStatus(
+                tabuleiro, placar, vez), flag=SEND_STATUS)
 
-            # ! Combinar um padrão de passagem da jogada feita
-            # * Sugestão: [(i1,j1),(i2,j2)] ou [i1,j1,i2,j2]
-            sendToAllClients(
-                client_list, f"Jogador {turno+1} escolheu as peças: {(i1, j1)} {(i2, j2)}")
+            # * Padrão decidido = ((i1,j1),(i2,j2))
+            jogada = {
+                "jogador": vez+1,
+                "jogada": ((i1, j1), (i2, j2))
+            }
 
             if tabuleiro[i1][j1] == tabuleiro[i2][j2]:
-                # TODO: Handle player acertar tentativa
-                sendToAllClients(client_list, SIGNAL_INPUT_SUCCESS)
+                # * Handle player acertar tentativa
+                sendToAllClients(
+                    client_list,
+                    jogada,
+                    SEND_INPUT_SUCCESS
+                )
 
-                incrementaPlacar(placar, turno)
+                incrementaPlacar(placar, vez)
                 paresEncontrados += 1
 
                 removePeca(tabuleiro, i1, j1)
@@ -353,15 +286,18 @@ def gameLoop(nJogadores, dim):
 
                 time.sleep(5)
             else:
-                # TODO: Handle player errar tentativa
-                sendToAllClients(client_list, SIGNAL_INPUT_FAIL)
+                # * Handle player errar tentativa
+                sendToAllClients(
+                    client_list,
+                    jogada,
+                    SEND_INPUT_FAIL)
 
                 time.sleep(3)
 
                 fechaPeca(tabuleiro, i1, j1)
                 fechaPeca(tabuleiro, i2, j2)
 
-                turno = (turno + 1) % nJogadores
+                vez = (vez + 1) % nJogadores
 
         maxScore = max(placar)
         vencedores = []
@@ -370,12 +306,7 @@ def gameLoop(nJogadores, dim):
             if placar[i] == maxScore:
                 vencedores.append(playerNumber)
 
-        if len(vencedores) > 1:
-            sendToAllClients(client_list, SEND_RESULT_DRAW)
-            sendToAllClients(client_list, vencedores)
-        else:
-            sendToAllClients(client_list, SEND_RESULT_WINNER)
-            sendToAllClients(client_list, vencedores[0])
+        sendToAllClients(client_list, vencedores, SEND_RESULT)
 
     except socket.timeout:
         pass
@@ -387,14 +318,29 @@ def gameLoop(nJogadores, dim):
 print(f"Servidor Iniciado!")
 
 
-nJogadores = 1
-dim = 4
-# nJogadores = int(input("Insira o número máximo de jogadores\n >"))
-# dim = int(input("Insira a dimensão do tabuleiro de jogo\n >"))
+try:
+    nJogadores = int(input("Quantos jogadores na mesa? (Enter para 1)\n>"))
+except:
+    print("Definindo valor padrão = 1")
+    nJogadores = 1
+
+try:
+    dim = int(input("Qual a dimensão do tabuleiro? (Par < 10, Enter para 4)\n>"))
+    if dim >= 10 or dim % 2 == 1:
+        print("Tabuleiro deve ser menor que 10x10 e de tamanho par")
+        print("Definindo valor padrão = 4")
+        dim = 4
+except:
+    print("Tabuleiro deve ser menor que 10x10 e de tamanho par")
+    print("Definindo valor padrão = 4")
+    dim = 4
+
+    # nJogadores = int(input("Insira o número máximo de jogadores\n >"))
+    # dim = int(input("Insira a dimensão do tabuleiro de jogo\n >"))
 
 try:
     while True:
-        print(f"Começando novo jogo!\n")
+        print(f"\nComeçando novo jogo!\n")
         print(f"Máximo de jogadores: {nJogadores}")
         print(f"Dimensão do tabuleiro: {dim}")
 
@@ -403,6 +349,11 @@ try:
         acceptClients(nJogadores)
 
         gameLoop(nJogadores, dim)
+
+        endGame()
+
 except Exception as exc:
     print(str(exc))
+    raise exc
+finally:
     terminateServer()
