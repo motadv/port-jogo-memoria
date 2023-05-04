@@ -329,8 +329,9 @@ except:
     # nJogadores = int(input("Insira o número máximo de jogadores\n >"))
     # dim = int(input("Insira a dimensão do tabuleiro de jogo\n >"))
 
-try:
-    while True:
+
+while True:
+    try:
         print(f"\nComeçando novo jogo!\n")
         print(f"Máximo de jogadores: {nJogadores}")
         print(f"Dimensão do tabuleiro: {dim}")
@@ -343,8 +344,11 @@ try:
 
         endGame()
 
-except Exception as exc:
-    print(str(exc))
-    raise exc
-finally:
-    terminateServer()
+    except Exception as exc:
+        print("\n EXCEPTION RAISED:")
+        print(str(exc))
+        print()
+        pass
+    finally:
+        terminateServer()
+        break
