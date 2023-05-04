@@ -114,7 +114,6 @@ msg = True
 while msg:
     # Cliente constantemente lê mensagens do servidor
     msg = receiveMessage(client_socket)
-    print("DEBUG:", msg)
     # Verifica se a mensagem foi recebida corretamente (False ou {header, data})
     if msg:
         flag, msg = msg
