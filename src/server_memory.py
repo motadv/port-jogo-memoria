@@ -53,7 +53,7 @@ def acceptClients(nJogadores):
         except socket.timeout:
             pass
         except Exception as exc:
-            raise exc
+            raise (exc)
 
     else:
         sendToAllClients(client_list, "Começando partida!")
@@ -116,15 +116,18 @@ def chooseCard(client, tabuleiro):
     except socket.timeout:
         pass
     except Exception as exc:
-        raise (exc)
+        raise exc
 
 
 def validateInput(playerInput: str):
     try:
         i = int(playerInput.split(' ')[0])
         j = int(playerInput.split(' ')[1])
-    except ValueError:
+    except (ValueError, IndexError):
         return ERROR_INVALID_FORMAT
+    except Exception as exc:
+        print("exc on validate input")
+        raise (exc)
 
     if i < 0 or i >= dim:
         return ERROR_IOOB
@@ -302,7 +305,7 @@ def gameLoop(nJogadores, dim):
     except socket.timeout:
         pass
     except Exception as exc:
-        raise (exc)
+        raise exc
 
 
 # * SERVIDOR INICIADO
@@ -347,8 +350,10 @@ while True:
     except Exception as exc:
         print("\n EXCEPTION RAISED:")
         print(str(exc))
-        print()
-        pass
-    finally:
-        terminateServer()
+        print("----------------")
+    except KeyboardInterrupt:
         break
+    finally:
+        endGame()
+
+terminateServer()
