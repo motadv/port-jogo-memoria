@@ -6,8 +6,8 @@ from Protocol.communicationProtocol import *
 # * Server socket TCP
 
 #! SETTAR IP DO HOST <<<<<
-HOST = "26.44.38.67"
-PORT = 50000
+HOST = socket.gethostname()
+PORT = 30000
 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.settimeout(1)
@@ -24,10 +24,10 @@ def terminateServer():
 
 
 def endGame():
-    for client in client_list:
-        client.close()
+    for i in range(len(client_list)):
+        client_list[i].close()
 
-    client_list = []
+    client_list.clear()
 
 
 def acceptClients(nJogadores):
@@ -293,9 +293,9 @@ def gameLoop(nJogadores, dim):
         maxScore = max(placar)
         vencedores = []
 
-        for i in range(placar):
+        for i in range(nJogadores):
             if placar[i] == maxScore:
-                vencedores.append(playerNumber)
+                vencedores.append(i+1)
 
         sendToAllClients(client_list, vencedores, SEND_RESULT)
 

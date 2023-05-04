@@ -60,6 +60,7 @@ SEND_INPUT_FAIL = SIGNAL_INPUT_FAIL
 def createMessage(message, flag: str = ''):
     # Se nenhuma flag for passada, a default é SEND_MESSAGE
     flag = flag if flag else SEND_MESSAGE
+    message = message if message else 'default'
 
     data = pickle.dumps((flag, message))
     header = f'{len(data):<{HEADER_LENGTH}}'.encode()

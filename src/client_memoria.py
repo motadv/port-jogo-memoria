@@ -1,9 +1,10 @@
 import socket
 import os
+from Protocol.communicationProtocol import *
 
 # ! SETTAR IP DO HOST <<<<<
-HOST = "26.44.38.67"
-PORT = 50000
+HOST = "193.123.103.206"
+PORT = 30000
 
 # * Message Settings
 # * Constantes utilizadas tanto por Cliente quanto por Servidor
@@ -26,35 +27,6 @@ ERROR_LIST = {
     "ERROR_IOOB": "#iOOB",
     "ERROR_JOOB": "#jOOB",
 }
-
-
-# ? Função que garante que você está recebendo uma mensagem do tamanho correto
-# ? para acessar o dado da mensagem, lembre de garantir que ela chegou
-# ? E acesse por receiveMessage(...)['data']
-# ? Caso não precise do header da mensagem na implementação
-# ? implemente diretamente no retorno da função o acesso ao ['data']
-
-def receiveMessage(socket):
-    try:
-        message_header = socket.recv(HEADER_LIST["HEADER_LENGTH"])
-
-        if not len(message_header):
-            return False
-
-        message_length = int(message_header.decode())
-
-        return {
-            "header": message_header,
-            "data": socket.recv(message_length).decode()
-        }
-    except:
-        return False
-
-
-def createMessage(message: str):
-    data = message.encode()
-    header = f'{len(data):<{HEADER_LIST["HEADER_LENGTH"]}}'.encode()
-    return header + data
 
 
 def limpa_tela() -> None:
@@ -124,12 +96,14 @@ def imprime_placar(placar):
 
 
 def tratar_erro(erro: str) -> None:
-    if erro == ERROR_LIST["ERROR_INVALID_FORMAT"]:
+    if erro == ERROR_INVALID_FORMAT:
         print('Coordenada inválida, use o formato "i j" (exemplo: 1 2).')
-    elif erro == ERROR_LIST["ERROR_IOOB"]:
+    elif erro == ERROR_IOOB:
         print('Coordenada i inválida.')
-    elif erro == ERROR_LIST["ERROR_JOOB"]:
+    elif erro == ERROR_JOOB:
         print('Coordenada j inválida.')
+    elif erro == ERROR_OPEN_CARD:
+        print('Coordenada já aberta.')
 
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -140,57 +114,36 @@ msg = True
 while msg:
     # Cliente constantemente lê mensagens do servidor
     msg = receiveMessage(client_socket)
-
+    print("DEBUG:", msg)
     # Verifica se a mensagem foi recebida corretamente (False ou {header, data})
     if msg:
-        # Acessando dado da mensagem
-        msg = msg['data']
-
-        if msg not in HEADER_LIST.values():
+        flag, msg = msg
+        if flag == SEND_MESSAGE:
             print(msg)
-
-        if msg == HEADER_LIST["REQUEST_GAME_INPUT"]:
+        elif flag == REQUEST_GAME_INPUT:
             # Caso mensagem seja sinalização de INPUT, enviar para Servidor seu Input (Ele está travado esperando)
             msgToSend = createMessage(
                 input("Digite uma coordenada (exemplo: 1 2).\n > "))
-            if msgToSend:
-                client_socket.send(msgToSend)
-        elif msg == HEADER_LIST["SEND_VEZ"]:
-            # Caso seja uma sinalização de envio de dados, solicitar uma nova mensagem que já está sendo enviada pelo servidor
-            msg = receiveMessage(client_socket)
-            if msg:
-                vez = msg['data']
-                print(f'Vez do jogador {vez}')
-        elif msg == HEADER_LIST["SEND_PLACAR"]:
-            # Caso seja uma sinalização de envio de dados, solicitar uma nova mensagem que já está sendo enviada pelo servidor
-            msg = receiveMessage(client_socket)
-            if msg:
-                placar = msg['data']
-                placar_lista = eval(placar)
-                imprime_placar(placar_lista)
-        elif msg == HEADER_LIST["SEND_TABULEIRO"]:
-            # Caso seja uma sinalização de envio de dados, solicitar uma nova mensagem que já está sendo enviada pelo servidor
-            msg = receiveMessage(client_socket)
-            if msg:
-                tabuleiro = msg['data']
-                tabuleiro_lista = eval(tabuleiro)
-                imprime_tabuleiro(tabuleiro_lista)
-        elif msg == HEADER_LIST["SEND_WAIT"]:
-            msg = receiveMessage(client_socket)
-            if msg:
-                jogador = msg['data']
-                print(f'Esperando o jogador {jogador}...')
-        elif msg == HEADER_LIST["SEND_INPUT_ERROR"]:
-            msg = receiveMessage(client_socket)
-            if msg:
-                erro = msg['data']
-                tratar_erro(erro)
-                print('Digite uma nova coordenada.')
-                print('> ', end='')
-                new_message = createMessage(input())
-                if new_message:
-                    client_socket.send(new_message)
-
+            client_socket.send(msgToSend)
+        elif flag == SEND_STATUS:
+            print(f'Vez do jogador {msg["vez"]}')
+            imprime_tabuleiro(msg["tabuleiro"])
+            imprime_placar(msg["placar"])
+        elif flag == SEND_WAIT:
+            print(f'Esperando o jogador {msg}...')
+        elif flag == SEND_INPUT_ERROR:
+            tratar_erro(msg)
+            print('Digite outra coordenada')
+            print('> ', end='')
+            new_message = createMessage(input())
+            if new_message:
+                client_socket.send(new_message)
+        elif flag == SEND_RESULT:
+            if len(msg) > 1:
+                vencedores = str(msg)[1:-1]
+                print(f"Empate! Os jogadores {vencedores} empataram!")
+            else:
+                print(f"Jogador {msg[0]} venceu!")
 
 client_socket.close()
 print("Desconectado do servidor.")
